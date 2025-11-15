@@ -42,7 +42,7 @@ def init_documind():
     # Use FREE models by default - no API key needed!
     documind = DocuMind(
         use_free_models=True,  # Use FREE Hugging Face models
-        ocr_enabled=True,
+        ocr_enabled=False,  # OCR disabled by default (optional)
         memory_enabled=True,
         evaluation_enabled=True
     )

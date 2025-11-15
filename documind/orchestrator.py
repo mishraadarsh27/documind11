@@ -44,8 +44,8 @@ class DocuMind:
         """
         self.use_free_models = use_free_models
         
-        # Initialize agents
-        self.reader = ReaderAgent(ocr_enabled=ocr_enabled)
+        # Initialize agents (OCR disabled by default to avoid build issues)
+        self.reader = ReaderAgent(ocr_enabled=False)  # OCR optional - disabled by default
         self.extractor = ExtractorAgent()
         
         # Use FREE models by default
