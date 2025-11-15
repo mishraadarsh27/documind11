@@ -228,3 +228,7 @@ if __name__ == '__main__':
     debug = os.getenv('FLASK_ENV') == 'development'
     app.run(host='0.0.0.0', port=port, debug=debug)
 
+# For Gunicorn
+if __name__ != '__main__':
+    init_documind()
+
