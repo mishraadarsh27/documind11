@@ -62,11 +62,11 @@ class DocuMind:
                 self.qa = QAAgent()
                 self.use_free_models = True
             else:
-                # Import OpenAI versions if needed
-                from .agents.analyzer_openai import AnalyzerAgent as OpenAIAnalyzer
-                from .agents.qa_agent_openai import QAAgent as OpenAIQA
-                self.analyzer = OpenAIAnalyzer(api_key=self.api_key)
-                self.qa = OpenAIQA(api_key=self.api_key)
+                # Use OpenAI (would need separate OpenAI agent files)
+                logger.warning("OpenAI mode not fully implemented. Using FREE models instead.")
+                self.analyzer = AnalyzerAgent()
+                self.qa = QAAgent()
+                self.use_free_models = True
         
         self.memory = MemoryAgent(storage_path=storage_path) if memory_enabled else None
         self.evaluator = EvaluatorAgent() if evaluation_enabled else None
