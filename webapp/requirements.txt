@@ -1,0 +1,19 @@
+# Web Application Requirements
+flask==3.0.0
+flask-cors==4.0.0
+werkzeug==3.0.1
+python-dotenv==1.0.0
+gunicorn==21.2.0
+loguru==0.7.2
+
+# DocuMind dependencies (from parent requirements.txt)
+# These should be installed from the parent directory
+# PyPDF2==3.0.1
+# pdfplumber==0.10.3
+# beautifulsoup4==4.12.2
+# requests==2.31.0
+# openai==1.12.0
+# sentence-transformers==2.3.1
+# chromadb==0.4.22
+# etc.
+

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuMind - AI Document Intelligence</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">📄 DocuMind</h1>
+                <p class="tagline">AI Document Intelligence Agent</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="card">
+                    <h2>Upload Document</h2>
+                    <p class="subtitle">Process PDFs, text files, or web URLs to extract insights</p>
+                    
+                    <div class="upload-tabs">
+                        <button class="tab-btn active" onclick="switchTab('file')">Upload File</button>
+                        <button class="tab-btn" onclick="switchTab('url')">From URL</button>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div id="fileTab" class="tab-content active">
+                        <form id="uploadForm" class="upload-form">
+                            <div class="file-input-wrapper">
+                                <input type="file" id="fileInput" accept=".pdf,.txt,.md" required>
+                                <label for="fileInput" class="file-label">
+                                    <span class="file-icon">📎</span>
+                                    <span class="file-text">Choose file or drag & drop</span>
+                                    <span class="file-hint">PDF, TXT, MD (Max 50MB)</span>
+                                </label>
+                            </div>
+                            
+                            <div class="tasks-selection">
+                                <label>Select Tasks:</label>
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" name="tasks" value="extract" checked> Extract Information</label>
+                                    <label><input type="checkbox" name="tasks" value="summarize" checked> Generate Summaries</label>
+                                    <label><input type="checkbox" name="tasks" value="qa"> Enable Q&A</label>
+                                    <label><input type="checkbox" name="tasks" value="evaluate"> Evaluate Quality</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" id="processBtn">
+                                <span class="btn-text">Process Document</span>
+                                <span class="btn-loader" style="display: none;">⏳ Processing...</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- URL Input -->
+                    <div id="urlTab" class="tab-content">
+                        <form id="urlForm" class="upload-form">
+                            <div class="input-group">
+                                <input type="url" id="urlInput" placeholder="https://example.com/article" required>
+                            </div>
+                            
+                            <div class="tasks-selection">
+                                <label>Select Tasks:</label>
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" name="tasks" value="extract" checked> Extract Information</label>
+                                    <label><input type="checkbox" name="tasks" value="summarize" checked> Generate Summaries</label>
+                                    <label><input type="checkbox" name="tasks" value="qa"> Enable Q&A</label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <span class="btn-text">Process URL</span>
+                                <span class="btn-loader" style="display: none;">⏳ Processing...</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-header">
+                    <h2>Document Analysis Results</h2>
+                    <button class="btn btn-secondary" onclick="resetView()">Process Another</button>
+                </div>
+
+                <!-- Metadata -->
+                <div class="card" id="metadataCard">
+                    <h3>Document Information</h3>
+                    <div class="metadata-grid" id="metadataContent"></div>
+                </div>
+
+                <!-- Extractions -->
+                <div class="card" id="extractionsCard">
+                    <h3>Extracted Information</h3>
+                    <div class="extractions-grid" id="extractionsContent"></div>
+                </div>
+
+                <!-- Summaries -->
+                <div class="card" id="summariesCard">
+                    <h3>Summaries</h3>
+                    <div class="summary-tabs">
+                        <button class="summary-tab active" onclick="showSummary('executive')">Executive</button>
+                        <button class="summary-tab" onclick="showSummary('bullet')">Bullet Points</button>
+                        <button class="summary-tab" onclick="showSummary('tldr')">TL;DR</button>
+                    </div>
+                    <div class="summary-content" id="summaryContent"></div>
+                </div>
+
+                <!-- Q&A Section -->
+                <div class="card" id="qaCard" style="display: none;">
+                    <h3>Ask Questions</h3>
+                    <form id="qaForm" class="qa-form">
+                        <div class="input-group">
+                            <input type="text" id="questionInput" placeholder="Ask a question about the document..." required>
+                            <button type="submit" class="btn btn-primary">Ask</button>
+                        </div>
+                    </form>
+                    <div class="qa-results" id="qaResults"></div>
+                </div>
+            </section>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing document...</p>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>DocuMind - AI Document Intelligence Agent | Built for Enterprise Agents Track</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+
