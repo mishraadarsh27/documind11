@@ -28,27 +28,46 @@ class DocuMind:
         ocr_enabled: bool = True,
         memory_enabled: bool = True,
         evaluation_enabled: bool = True,
-        storage_path: str = "./memory_bank"
+        storage_path: str = "./memory_bank",
+        use_free_models: bool = True
     ):
         """
         Initialize DocuMind
         
         Args:
-            api_key: OpenAI API key
+            api_key: OpenAI API key (optional if use_free_models=True)
             ocr_enabled: Enable OCR functionality
             memory_enabled: Enable memory system
             evaluation_enabled: Enable evaluation
             storage_path: Path for memory storage
+            use_free_models: Use FREE Hugging Face models instead of OpenAI (default: True)
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            logger.warning("OpenAI API key not provided. Some features may not work.")
+        self.use_free_models = use_free_models
         
         # Initialize agents
         self.reader = ReaderAgent(ocr_enabled=ocr_enabled)
         self.extractor = ExtractorAgent()
-        self.analyzer = AnalyzerAgent(api_key=self.api_key) if self.api_key else None
-        self.qa = QAAgent(api_key=self.api_key) if self.api_key else None
+        
+        # Use FREE models by default
+        if use_free_models:
+            logger.info("Using FREE Hugging Face models - No API key required!")
+            self.analyzer = AnalyzerAgent()  # FREE - no API key needed
+            self.qa = QAAgent()  # FREE - no API key needed
+        else:
+            # Use OpenAI (requires API key)
+            self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+            if not self.api_key:
+                logger.warning("OpenAI API key not provided. Switching to FREE models.")
+                self.analyzer = AnalyzerAgent()
+                self.qa = QAAgent()
+                self.use_free_models = True
+            else:
+                # Import OpenAI versions if needed
+                from .agents.analyzer_openai import AnalyzerAgent as OpenAIAnalyzer
+                from .agents.qa_agent_openai import QAAgent as OpenAIQA
+                self.analyzer = OpenAIAnalyzer(api_key=self.api_key)
+                self.qa = OpenAIQA(api_key=self.api_key)
+        
         self.memory = MemoryAgent(storage_path=storage_path) if memory_enabled else None
         self.evaluator = EvaluatorAgent() if evaluation_enabled else None
         
@@ -120,19 +139,26 @@ class DocuMind:
                 self.memory.store_insights(document_id, extractions, document.get("metadata"), persist=store_in_memory)
         
         # Step 3: Generate summaries
-        if "summarize" in tasks and self.analyzer:
-            logger.info("Generating summaries...")
-            summaries = self.analyzer.generate_summaries(document)
-            results["summaries"] = summaries
-            
-            if self.memory:
-                self.memory.store_summaries(document_id, summaries)
+        if "summarize" in tasks:
+            if self.analyzer:
+                logger.info("Generating summaries using FREE models...")
+                summaries = self.analyzer.generate_summaries(document)
+                results["summaries"] = summaries
+                
+                if self.memory:
+                    self.memory.store_summaries(document_id, summaries)
+            else:
+                logger.warning("Analyzer not available. Skipping summarization.")
+                results["summaries"] = {}
         
         # Step 4: Set up Q&A
-        if "qa" in tasks and self.qa:
-            logger.info("Setting up Q&A system...")
-            self.qa.setup_document(document)
-            results["qa"] = self.qa
+        if "qa" in tasks:
+            if self.qa:
+                logger.info("Setting up Q&A system with FREE models...")
+                self.qa.setup_document(document)
+                results["qa"] = self.qa
+            else:
+                logger.warning("Q&A agent not available. Skipping Q&A setup.")
         
         # Step 5: Evaluate outputs
         if "evaluate" in tasks and self.evaluator:
@@ -171,7 +197,7 @@ class DocuMind:
         """
         if not self.qa:
             return {
-                "answer": "Q&A system not available. Please provide OpenAI API key.",
+                "answer": "Q&A system not available. Please process document with Q&A enabled first.",
                 "citations": [],
                 "confidence": 0.0
             }

@@ -37,18 +37,16 @@ Path(UPLOAD_FOLDER).mkdir(exist_ok=True)
 documind = None
 
 def init_documind():
-    """Initialize DocuMind with API key"""
+    """Initialize DocuMind with FREE models (no API key required!)"""
     global documind
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        logger.warning("OpenAI API key not found. Some features may not work.")
+    # Use FREE models by default - no API key needed!
     documind = DocuMind(
-        api_key=api_key,
+        use_free_models=True,  # Use FREE Hugging Face models
         ocr_enabled=True,
         memory_enabled=True,
         evaluation_enabled=True
     )
-    logger.info("DocuMind initialized")
+    logger.info("DocuMind initialized with FREE models - No API key required!")
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -65,7 +63,8 @@ def health():
     return jsonify({
         'status': 'healthy',
         'documind_initialized': documind is not None,
-        'api_key_set': bool(os.getenv('OPENAI_API_KEY'))
+        'using_free_models': True,
+        'message': 'Using FREE Hugging Face models - No API key required!'
     })
 
 @app.route('/api/process', methods=['POST'])

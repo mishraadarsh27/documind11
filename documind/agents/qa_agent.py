@@ -1,41 +1,34 @@
 """
 Q&A Agent - Performs retrieval-augmented question answering with citations
+Uses FREE models - No API key required!
 """
 
-from typing import Dict, List, Optional, Tuple
-from openai import OpenAI
+from typing import Dict, List, Optional
 import chromadb
 from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 from loguru import logger
 import os
 import hashlib
+import re
 
 
 class QAAgent:
     """
     Q&A Agent performs retrieval-augmented generation (RAG) for question answering
     with page-level citations and confidence scoring
+    Uses FREE sentence transformers - No OpenAI API required!
     """
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo"):
+    def __init__(self):
         """
-        Initialize Q&A Agent
-        
-        Args:
-            api_key: OpenAI API key
-            model: OpenAI model to use
+        Initialize Q&A Agent with FREE models
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenAI API key is required.")
-        
-        self.client = OpenAI(api_key=self.api_key)
-        self.model = model
-        
-        # Initialize embedding model
+        # Initialize embedding model (FREE - no API key needed)
         try:
+            logger.info("Loading FREE embedding model: all-MiniLM-L6-v2")
             self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("Embedding model loaded successfully!")
         except Exception as e:
             logger.warning(f"Could not load embedding model: {e}")
             self.embedding_model = None
@@ -105,7 +98,7 @@ class QAAgent:
     
     def answer(self, question: str, top_k: int = 3, return_citations: bool = True) -> Dict:
         """
-        Answer a question about the document
+        Answer a question about the document using FREE extractive Q&A
         
         Args:
             question: User question
@@ -125,11 +118,15 @@ class QAAgent:
         # Retrieve relevant chunks
         relevant_chunks = self._retrieve_relevant_chunks(question, top_k)
         
-        # Build context from relevant chunks
-        context = "\n\n".join([chunk["text"] for chunk in relevant_chunks])
+        if not relevant_chunks:
+            return {
+                "answer": "I couldn't find relevant information to answer your question in the document.",
+                "citations": [],
+                "confidence": 0.0
+            }
         
-        # Generate answer using LLM
-        answer = self._generate_answer(question, context, relevant_chunks)
+        # Generate answer using extractive method (FREE - no API needed)
+        answer = self._generate_extractive_answer(question, relevant_chunks)
         
         # Extract citations
         citations = []
@@ -142,7 +139,7 @@ class QAAgent:
                         "text": chunk["text"][:200] + "..." if len(chunk["text"]) > 200 else chunk["text"]
                     })
         
-        # Calculate confidence (simple heuristic)
+        # Calculate confidence
         confidence = self._calculate_confidence(question, answer, relevant_chunks)
         
         return {
@@ -182,43 +179,61 @@ class QAAgent:
             logger.error(f"Error retrieving chunks: {e}")
             return []
     
-    def _generate_answer(self, question: str, context: str, chunks: List[Dict]) -> str:
-        """Generate answer using LLM"""
-        prompt = f"""Answer the following question based on the provided context from a document.
-        
-If the answer cannot be found in the context, say so explicitly.
-
-Question: {question}
-
-Context:
-{context}
-
-Answer:"""
-        
+    def _generate_extractive_answer(self, question: str, chunks: List[Dict]) -> str:
+        """
+        Generate answer using extractive method (FREE - no API needed)
+        Finds the most relevant sentence from chunks
+        """
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that answers questions based on document content. Always cite page numbers when available."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1,
-                max_tokens=500
-            )
-            return response.choices[0].message.content.strip()
+            # Combine all chunk texts
+            context = "\n\n".join([chunk["text"] for chunk in chunks])
+            
+            # Simple extractive approach: find sentences that contain question keywords
+            question_keywords = set(word.lower() for word in question.split() if len(word) > 3)
+            
+            # Split into sentences
+            import nltk
+            try:
+                nltk.download('punkt', quiet=True)
+            except:
+                pass
+            from nltk.tokenize import sent_tokenize
+            
+            sentences = sent_tokenize(context)
+            
+            # Score sentences based on keyword matches
+            scored_sentences = []
+            for sentence in sentences:
+                sentence_lower = sentence.lower()
+                matches = sum(1 for keyword in question_keywords if keyword in sentence_lower)
+                score = matches / len(question_keywords) if question_keywords else 0
+                scored_sentences.append((sentence, score))
+            
+            # Get top sentences
+            scored_sentences.sort(key=lambda x: x[1], reverse=True)
+            top_sentences = [s for s, score in scored_sentences[:3] if score > 0]
+            
+            if top_sentences:
+                # Combine top sentences
+                answer = " ".join(top_sentences)
+                # Clean up
+                answer = re.sub(r'\s+', ' ', answer).strip()
+                return answer
+            else:
+                # Fallback: return first chunk
+                return chunks[0]["text"][:500] if chunks else "I couldn't find a specific answer to your question."
+                
         except Exception as e:
             logger.error(f"Error generating answer: {e}")
+            # Fallback
+            if chunks:
+                return chunks[0]["text"][:500]
             return "Error generating answer."
     
     def _calculate_confidence(self, question: str, answer: str, chunks: List[Dict]) -> float:
         """Calculate confidence score (0-1)"""
         if not chunks:
             return 0.0
-        
-        # Simple confidence based on:
-        # 1. Number of relevant chunks
-        # 2. Distance scores (lower is better)
-        # 3. Answer length (reasonable length suggests good answer)
         
         base_confidence = 0.5
         
@@ -236,8 +251,7 @@ Answer:"""
             base_confidence = (base_confidence + distance_confidence) / 2
         
         # Adjust based on answer quality
-        if len(answer) > 50 and "cannot be found" not in answer.lower():
+        if len(answer) > 50:
             base_confidence += 0.1
         
         return min(1.0, base_confidence)
-
