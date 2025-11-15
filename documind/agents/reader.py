@@ -29,20 +29,28 @@ class ReaderAgent:
     - OCR for scanned documents
     """
     
-    def __init__(self, ocr_enabled: bool = True, tesseract_cmd: Optional[str] = None):
+    def __init__(self, ocr_enabled: bool = False, tesseract_cmd: Optional[str] = None):
         """
         Initialize Reader Agent
         
         Args:
-            ocr_enabled: Enable OCR for scanned documents
+            ocr_enabled: Enable OCR for scanned documents (default: False - optional)
             tesseract_cmd: Path to tesseract executable (if not in PATH)
         """
         self.ocr_enabled = ocr_enabled
-        if tesseract_cmd:
-            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        if ocr_enabled:
+            try:
+                if tesseract_cmd:
+                    pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+                self.ocr_processor = OCRProcessor()
+            except Exception as e:
+                logger.warning(f"OCR not available: {e}. Continuing without OCR.")
+                self.ocr_enabled = False
+                self.ocr_processor = None
+        else:
+            self.ocr_processor = None
         
         self.pdf_parser = PDFParser()
-        self.ocr_processor = OCRProcessor() if ocr_enabled else None
         self.chunker = DocumentChunker()
         
     def read_document(self, source: str, source_type: Optional[str] = None) -> Dict:
