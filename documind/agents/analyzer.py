@@ -16,7 +16,7 @@ class AnalyzerAgent:
     - TL;DR summary: Very brief summary
     """
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo"):
         """
         Initialize Analyzer Agent
         

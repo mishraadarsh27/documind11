@@ -18,7 +18,7 @@ class QAAgent:
     with page-level citations and confidence scoring
     """
     
-    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-4-turbo-preview"):
+    def __init__(self, api_key: Optional[str] = None, model: str = "gpt-3.5-turbo"):
         """
         Initialize Q&A Agent
         
